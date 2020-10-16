@@ -1,0 +1,65 @@
+{
+	"name": "Dataset_Excel_ADLS_Gen2_Source",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LinkedService_AzureDataLakeStorage_PO",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FolderPath": {
+				"type": "string"
+			},
+			"FileName": {
+				"type": "string"
+			},
+			"SheetName": {
+				"type": "string"
+			},
+			"DataRange": {
+				"type": "string"
+			},
+			"ContainerName": {
+				"type": "string"
+			},
+			"HeaderFlag": {
+				"type": "bool"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": {
+				"value": "@dataset().SheetName",
+				"type": "Expression"
+			},
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().FileName",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().FolderPath",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().ContainerName",
+					"type": "Expression"
+				}
+			},
+			"range": {
+				"value": "@dataset().DataRange",
+				"type": "Expression"
+			},
+			"firstRowAsHeader": {
+				"value": "@dataset().HeaderFlag",
+				"type": "Expression"
+			}
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

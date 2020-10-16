@@ -1,0 +1,165 @@
+{
+	"name": "cigna_file_load",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata1",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Delete",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": {
+								"value": "po-warehouse-data",
+								"type": "Expression"
+							},
+							"FolderPath": {
+								"value": "@pipeline().parameters.file_path",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata1').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy data1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 1
+											},
+											"sink": {
+												"name": "col_1",
+												"type": "String",
+												"physicalType": "varchar"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": "po-warehouse-data",
+										"FolderPath": {
+											"value": "@pipeline().parameters.file_path",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"FirstRowHeader": {
+											"value": "false",
+											"type": "Expression"
+										},
+										"ColumnDelimiter": {
+											"value": "|",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "Dataset_AzureSql_Table_Sink",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "land",
+										"TableName": "tbl_medical_claim_cigna",
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file_path": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "Tredence_Adhoc_Pipelines_for_data_ingestion"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-10-16T06:04:28Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

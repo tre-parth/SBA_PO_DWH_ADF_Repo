@@ -1,0 +1,678 @@
+{
+	"name": "Pipeline_Load_Medical_Claims_Data",
+	"properties": {
+		"activities": [
+			{
+				"name": "Set Data Source name",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "DataSource",
+					"value": {
+						"value": "@pipeline().parameters.DataSource",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set Client name",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "Client",
+					"value": {
+						"value": "@pipeline().parameters.Client",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get File List",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Set Standard File Name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": {
+								"value": "@variables('ContainerName')",
+								"type": "Expression"
+							},
+							"FolderPath": {
+								"value": "@concat(variables('DataSource'),'/',variables('Client'),'/',variables('FolderFileType'),'/','Unprocessed')",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "@concat('','')",
+								"type": "Expression"
+							},
+							"FirstRowHeader": true,
+							"ColumnDelimiter": "\t"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Filter Validation and Data Files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get File List",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get File List').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Filter Data and Validation Files",
+							"type": "Switch",
+							"dependsOn": [
+								{
+									"activity": "Set FileName",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"on": {
+									"value": "@substring(item().name,0,1)",
+									"type": "Expression"
+								},
+								"cases": [
+									{
+										"value": "x",
+										"activities": [
+											{
+												"name": "Append to ValidationFileList",
+												"type": "AppendVariable",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"variableName": "ValidationFileList",
+													"value": {
+														"value": "@variables('FileName')",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									},
+									{
+										"value": "d",
+										"activities": [
+											{
+												"name": "Append to DataFileList",
+												"type": "AppendVariable",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"variableName": "DataFileList",
+													"value": {
+														"value": "@variables('FileName')",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								]
+							}
+						},
+						{
+							"name": "Set FileName",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileName",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Lookup Standard Name for File",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Set Data Source name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set Client name",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat('SELECT file_name FROM map.cm_data_transfer_client_list WHERE client_name LIKE ''',variables('Client'),''' AND data_source = ''','HCSC',''' AND file_type = ''',variables('FileType'),'''')",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Dataset_AzureSql_Table_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "map",
+							"TableName": "cm_data_transfer_client_list",
+							"DatabaseName": {
+								"value": "@pipeline().parameters.DatabaseName",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Set Standard File Name",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Set Standard File Format",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StandardFileName",
+					"value": {
+						"value": "@replace(activity('Lookup Standard Name for File').output.firstRow.file_name,concat('YYYYMMDD.',variables('StandardFileFormat')),'')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set Standard File Format",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Lookup Standard Name for File",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StandardFileFormat",
+					"value": {
+						"value": "@split(activity('Lookup Standard Name for File').output.firstRow.file_name,'.')[1]",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Iterate Data Files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter Validation and Data Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('DataFileList')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Set File Date",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileDate",
+								"value": {
+									"value": "@substring(split(item(),'.')[0],sub(length(split(item(),'.')[0]),8),8)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Validation File Name",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set File Date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set Data FileName",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "ValidationFileName",
+								"value": {
+									"value": "@concat('x',substring(variables('StandardFileName'),1,sub(length(variables('StandardFileName')),1)),variables('FileDate'),'.',variables('StandardFileFormat'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Check Validation File Availability",
+							"type": "Validation",
+							"dependsOn": [
+								{
+									"activity": "Set Validation File Name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(variables('DataSource'),'/',variables('Client'),'/',variables('FolderFileType'),'/','Unprocessed')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@variables('ValidationFileName')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								},
+								"timeout": "0.00:01:00",
+								"sleep": 10
+							}
+						},
+						{
+							"name": "Set Validation File Availability Flag",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Check Validation File Availability",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "ValidationFileAvailable",
+								"value": false
+							}
+						},
+						{
+							"name": "Lookup Account and Record Count from Validation File",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Check Validation File Availability",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(variables('DataSource'),'/',variables('Client'),'/',variables('FolderFileType'),'/','Unprocessed')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@variables('ValidationFileName')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								},
+								"firstRowOnly": false
+							}
+						},
+						{
+							"name": "Set Account for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Account",
+								"value": {
+									"value": "@trim(split(activity('Lookup Account and Record Count from Validation File').output.value[0].Prop_0,':')[1])",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set expected Record Count for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "RecordCount",
+								"value": {
+									"value": "@replace(trim(split(activity('Lookup Account and Record Count from Validation File').output.value[1].Prop_0,':')[1]),',','')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Prepare Aggregate File",
+							"type": "ExecuteDataFlow",
+							"dependsOn": [
+								{
+									"activity": "Set Aggregate File Name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataflow": {
+									"referenceName": "DataFlow_Claims_Validation",
+									"type": "DataFlowReference",
+									"parameters": {
+										"SrcFolderPath": {
+											"value": "'@{concat(variables('DataSource'),'/',variables('Client'),'/',variables('FolderFileType'),'/','Unprocessed/')}'",
+											"type": "Expression"
+										},
+										"SrcFileName": {
+											"value": "'@{item()}'",
+											"type": "Expression"
+										},
+										"TgtFolderPath": {
+											"value": "'@{concat(variables('DataSource'),'/',variables('Client'),'/',variables('FolderFileType'),'/','Unprocessed/')}'",
+											"type": "Expression"
+										},
+										"TgtFileName": {
+											"value": "'@{variables('AggregateFileName')}'",
+											"type": "Expression"
+										}
+									},
+									"datasetParameters": {
+										"RecordCount": {
+											"ContainerName": {
+												"value": "@variables('ContainerName')",
+												"type": "Expression"
+											},
+											"FolderPath": {
+												"value": "@concat(variables('DataSource'),'/',variables('Client'),'/',variables('FolderFileType'),'/','Unprocessed')",
+												"type": "Expression"
+											},
+											"FileName": {
+												"value": "@item()",
+												"type": "Expression"
+											},
+											"FirstRowHeader": false,
+											"ColumnDelimiter": "\t"
+										},
+										"sink1": {
+											"ContainerName": {
+												"value": "@variables('ContainerName')",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								"compute": {
+									"coreCount": 8,
+									"computeType": "General"
+								}
+							}
+						},
+						{
+							"name": "Set Aggregate File Name",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "AggregateFileName",
+								"value": {
+									"value": "@concat('Aggregate_',variables('DataSource'),'_',variables('Client'),'_',variables('FileType'),'_',variables('FileDate'),'.txt')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Data FileName",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileName",
+								"value": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"DataSource": {
+				"type": "string",
+				"defaultValue": "Test"
+			},
+			"Client": {
+				"type": "string",
+				"defaultValue": "HCSC House"
+			},
+			"DatabaseName": {
+				"type": "string",
+				"defaultValue": "db-po-warehouse-dev-eus"
+			},
+			"ActualDataSource": {
+				"type": "string",
+				"defaultValue": "HCSC"
+			}
+		},
+		"variables": {
+			"ContainerName": {
+				"type": "String",
+				"defaultValue": "po-warehouse-data"
+			},
+			"DataSource": {
+				"type": "String"
+			},
+			"Client": {
+				"type": "String"
+			},
+			"FolderFileType": {
+				"type": "String",
+				"defaultValue": "Medical_Claim"
+			},
+			"FileName": {
+				"type": "String"
+			},
+			"StandardFileName": {
+				"type": "String"
+			},
+			"ValidationFileName": {
+				"type": "String"
+			},
+			"DataFileList": {
+				"type": "Array"
+			},
+			"ValidationFileList": {
+				"type": "Array"
+			},
+			"StandardFileFormat": {
+				"type": "String"
+			},
+			"AccountFlag": {
+				"type": "Boolean"
+			},
+			"RecordCountFlag": {
+				"type": "Boolean"
+			},
+			"FileDate": {
+				"type": "String"
+			},
+			"ValidationFile": {
+				"type": "String"
+			},
+			"ValidationFileAvailable": {
+				"type": "Boolean"
+			},
+			"Account": {
+				"type": "String"
+			},
+			"RecordCount": {
+				"type": "String"
+			},
+			"AggregateFileName": {
+				"type": "String"
+			},
+			"DQ1RunFlag": {
+				"type": "String"
+			},
+			"ActualRecordCount": {
+				"type": "String"
+			},
+			"ActualAccount": {
+				"type": "String"
+			},
+			"ColumnCount": {
+				"type": "String"
+			},
+			"FileType": {
+				"type": "String",
+				"defaultValue": "Medical"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-08-20T07:27:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

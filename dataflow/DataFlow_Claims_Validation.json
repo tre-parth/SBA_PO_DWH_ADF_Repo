@@ -1,0 +1,51 @@
+{
+	"name": "DataFlow_Claims_Validation",
+	"properties": {
+		"folder": {
+			"name": "Tredence"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference"
+					},
+					"name": "RecordCount"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LinkedService_AzureDataLakeStorage_PO",
+						"type": "LinkedServiceReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_DF_Sink",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Union1"
+				},
+				{
+					"name": "Pivot1"
+				},
+				{
+					"name": "Sort1"
+				},
+				{
+					"name": "DerivedColumn1"
+				}
+			],
+			"script": "parameters{\n\tSrcFolderPath as string,\n\tSrcFileName as string,\n\tTgtFolderPath as string,\n\tTgtFileName as string\n}\nsource(output(\n\t\tcol1 as string,\n\t\tcol2 as string,\n\t\tcol3 as string,\n\t\tcol4 as string,\n\t\tcol5 as string,\n\t\tcol6 as string,\n\t\tcol7 as string,\n\t\tcol8 as string,\n\t\tcol9 as string,\n\t\tcol10 as string,\n\t\tcol11 as string,\n\t\tcol12 as string,\n\t\tcol13 as string,\n\t\tcol14 as string,\n\t\tcol15 as string,\n\t\tcol16 as string,\n\t\tcol17 as string,\n\t\tcol18 as string,\n\t\tcol19 as string,\n\t\tcol20 as string,\n\t\tcol21 as string,\n\t\tcol22 as string,\n\t\tcol23 as string,\n\t\tcol24 as string,\n\t\tcol25 as string,\n\t\tcol26 as string,\n\t\tcol27 as string,\n\t\tcol28 as string,\n\t\tcol29 as string,\n\t\tcol30 as string,\n\t\tcol31 as string,\n\t\tcol32 as string,\n\t\tcol33 as string,\n\t\tcol34 as string,\n\t\tcol35 as string,\n\t\tcol36 as string,\n\t\tcol37 as string,\n\t\tcol38 as string,\n\t\tcol39 as string,\n\t\tcol40 as string,\n\t\tcol41 as string,\n\t\tcol42 as string,\n\t\tcol43 as string,\n\t\tcol44 as string,\n\t\tcol45 as string,\n\t\tcol46 as string,\n\t\tcol47 as string,\n\t\tcol48 as string,\n\t\tcol49 as string,\n\t\tcol50 as string,\n\t\tcol51 as string,\n\t\tcol52 as string,\n\t\tcol53 as string,\n\t\tcol54 as string,\n\t\tcol55 as string,\n\t\tcol56 as string,\n\t\tcol57 as string,\n\t\tcol58 as string,\n\t\tcol59 as string,\n\t\tcol60 as string,\n\t\tcol61 as string,\n\t\tcol62 as string,\n\t\tcol63 as string,\n\t\tcol64 as string,\n\t\tcol65 as string,\n\t\tcol66 as string,\n\t\tcol67 as string,\n\t\tcol68 as string,\n\t\tcol69 as string,\n\t\tcol70 as string,\n\t\tcol71 as string,\n\t\tcol72 as string,\n\t\tcol73 as string,\n\t\tcol74 as string,\n\t\tcol75 as string,\n\t\tcol76 as string,\n\t\tcol77 as string,\n\t\tcol78 as string,\n\t\tcol79 as string,\n\t\tcol80 as string,\n\t\tcol81 as string,\n\t\tcol82 as string,\n\t\tcol83 as string,\n\t\tcol84 as string,\n\t\tcol85 as string,\n\t\tcol86 as string,\n\t\tcol87 as string,\n\t\tcol88 as string,\n\t\tcol89 as string,\n\t\tcol90 as string,\n\t\tcol91 as string,\n\t\tcol92 as string,\n\t\tcol93 as string,\n\t\tcol94 as string,\n\t\tcol95 as string,\n\t\tcol96 as string,\n\t\tcol97 as string,\n\t\tcol98 as string,\n\t\tcol99 as string,\n\t\tcol100 as string,\n\t\tcol101 as string,\n\t\tcol102 as string,\n\t\tcol103 as string,\n\t\tcol104 as string,\n\t\tcol105 as string,\n\t\tcol106 as string,\n\t\tcol107 as string,\n\t\tcol108 as string,\n\t\tcol109 as string,\n\t\tcol110 as string,\n\t\tcol111 as string,\n\t\tcol112 as string,\n\t\tcol113 as string,\n\t\tcol114 as string,\n\t\tcol115 as string,\n\t\tcol116 as string,\n\t\tcol117 as string,\n\t\tcol118 as string,\n\t\tcol119 as string,\n\t\tcol120 as string,\n\t\tcol121 as string,\n\t\tcol122 as string,\n\t\tcol123 as string,\n\t\tcol124 as string,\n\t\tcol125 as string,\n\t\tcol126 as string,\n\t\tcol127 as string,\n\t\tcol128 as string,\n\t\tcol129 as string,\n\t\tcol130 as string,\n\t\tcol131 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\twildcardPaths:[($SrcFolderPath+$SrcFileName)]) ~> RecordCount\nsource(output(\n\t\t{Column #} as double,\n\t\t{Field Name} as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\tformat: 'excel',\n\tfileSystem: 'po-warehouse-data',\n\tfolderPath: 'PO_WH_Development_Docs/Layout',\n\tfileName: 'HCSC File Layout Structure.xlsx',\n\tsheetName: 'Claim File Layout',\n\trange: 'A1:B132',\n\tfirstRowAsHeader: true) ~> source1\nDerivedColumn1, RecordCount union(byName: false)~> Union1\nSort1 pivot(pivotBy({Field Name}),\n\t{} = count(1),\n\tcolumnNaming: '$N$V',\n\tlateral: false) ~> Pivot1\nsource1 sort(asc({Column #}, false)) ~> Sort1\nPivot1 derive(each(match(true()), $$ = toString($$))) ~> DerivedColumn1\nUnion1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\temptyLinesAsHeader: 2,\n\tpartitionFileNames:[($TgtFileName)],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> sink1"
+		}
+	}
+}

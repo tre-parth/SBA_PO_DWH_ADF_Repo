@@ -1,0 +1,158 @@
+{
+	"name": "Pipeline_Medical_Claims_DQ1",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Column Count from Data File",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": {
+								"value": "@pipeline().parameters.ContainerName",
+								"type": "Expression"
+							},
+							"FolderPath": {
+								"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.FolderFileType,'/','Unprocessed')",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "@pipeline().parameters.FileName",
+								"type": "Expression"
+							},
+							"FirstRowHeader": false,
+							"ColumnDelimiter": "\t"
+						}
+					},
+					"fieldList": [
+						"columnCount"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Set Column Count",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Get Column Count from Data File",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "ColumnCount",
+					"value": {
+						"value": "@string(activity('Get Column Count from Data File').output.columnCount)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Lookup Column Headers for Layout",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Set Column Count",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true
+						}
+					},
+					"dataset": {
+						"referenceName": "Dataset_Excel_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"FolderPath": "PO_WH_Development_Docs/Layout",
+							"FileName": {
+								"value": "@concat(variables('ActualDataSource'),' File Layout Structure.xlsx')",
+								"type": "Expression"
+							},
+							"SheetName": "Claim File Layout",
+							"DataRange": {
+								"value": "@concat('B1:','B',string(add(int(variables('ColumnCount')),1)))",
+								"type": "Expression"
+							},
+							"ContainerName": {
+								"value": "@pipeline().parameters.ContainerName",
+								"type": "Expression"
+							},
+							"HeaderFlag": true
+						}
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"parameters": {
+			"ContainerName": {
+				"type": "string"
+			},
+			"DataSource": {
+				"type": "string"
+			},
+			"Client": {
+				"type": "string"
+			},
+			"FileType": {
+				"type": "string"
+			},
+			"FileName": {
+				"type": "string"
+			},
+			"FolderFileType": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"ColumnCount": {
+				"type": "String"
+			},
+			"ActualDataSource": {
+				"type": "String",
+				"defaultValue": "HCSC"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-08-20T07:27:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

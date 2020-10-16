@@ -1,0 +1,612 @@
+{
+	"name": "Medica_Claim_file_load",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata1",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": "po-warehouse-data",
+							"FolderPath": "Medica/Batch1/Medical_Claim/Unprocessed/",
+							"FileName": "@concat('','')",
+							"FirstRowHeader": true,
+							"ColumnDelimiter": "  "
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata1').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy HCSC House Medical Claims Data_copy1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"tableOption": "autoCreate"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 1
+											},
+											"sink": {
+												"name": "Member_ID",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 2
+											},
+											"sink": {
+												"name": "Claim_Number",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 3
+											},
+											"sink": {
+												"name": "Seq_Number",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 4
+											},
+											"sink": {
+												"name": "Trans_Code",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 5
+											},
+											"sink": {
+												"name": "Claim_Detail_Line_Number",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 6
+											},
+											"sink": {
+												"name": "Claim_Service_Begin_Date",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 7
+											},
+											"sink": {
+												"name": "Claim_Service_End_Date",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 8
+											},
+											"sink": {
+												"name": "Procedure_Code1",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 9
+											},
+											"sink": {
+												"name": "Procedure_Code1_Type",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 10
+											},
+											"sink": {
+												"name": "Procedure_Code2",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 11
+											},
+											"sink": {
+												"name": "Procedure_Code2_Type",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 12
+											},
+											"sink": {
+												"name": "Procedure_Code3",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 13
+											},
+											"sink": {
+												"name": "Procedure_Code3_Type",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 14
+											},
+											"sink": {
+												"name": "Procedure_Code4",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 15
+											},
+											"sink": {
+												"name": "Procedure_Code4_Type",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 16
+											},
+											"sink": {
+												"name": "Procedure_Code5",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 17
+											},
+											"sink": {
+												"name": "Procedure_Code5_Type",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 18
+											},
+											"sink": {
+												"name": "Paid_Date",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 19
+											},
+											"sink": {
+												"name": "Allowed_Amount",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 20
+											},
+											"sink": {
+												"name": "Deductible",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 21
+											},
+											"sink": {
+												"name": "Coinsurance",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 22
+											},
+											"sink": {
+												"name": "Copay",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 23
+											},
+											"sink": {
+												"name": "Claim_Type",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 24
+											},
+											"sink": {
+												"name": "Bill_Type",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 25
+											},
+											"sink": {
+												"name": "Revenue_Code",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 26
+											},
+											"sink": {
+												"name": "Claim_Status",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 27
+											},
+											"sink": {
+												"name": "Type_of_Admission",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 28
+											},
+											"sink": {
+												"name": "Diagnosis_Code1",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 29
+											},
+											"sink": {
+												"name": "Diagnosis_Code2",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 30
+											},
+											"sink": {
+												"name": "Diagnosis_Code3",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 31
+											},
+											"sink": {
+												"name": "Diagnosis_Code4",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 32
+											},
+											"sink": {
+												"name": "Diagnosis_Code5",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 33
+											},
+											"sink": {
+												"name": "Diagnosis_Code6",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 34
+											},
+											"sink": {
+												"name": "Diagnosis_Code7",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 35
+											},
+											"sink": {
+												"name": "Diagnosis_Code8",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 36
+											},
+											"sink": {
+												"name": "Diagnosis_Code9",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 37
+											},
+											"sink": {
+												"name": "Diagnosis_Code10",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 38
+											},
+											"sink": {
+												"name": "Diagnosis_Code11",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 39
+											},
+											"sink": {
+												"name": "Diagnosis_Code12",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 40
+											},
+											"sink": {
+												"name": "Diagnosis_Code13",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 41
+											},
+											"sink": {
+												"name": "Diagnosis_Code14",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 42
+											},
+											"sink": {
+												"name": "Diagnosis_Code15",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 43
+											},
+											"sink": {
+												"name": "Diagnosis_Code16",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 44
+											},
+											"sink": {
+												"name": "Diagnosis_Code17",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 45
+											},
+											"sink": {
+												"name": "Diagnosis_Code18",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 46
+											},
+											"sink": {
+												"name": "Diagnosis_Code19",
+												"physicalType": "String"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 47
+											},
+											"sink": {
+												"name": "Diagnosis_Code20",
+												"physicalType": "String"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": "po-warehouse-data",
+										"FolderPath": {
+											"value": "Medica/Batch1/Medical_Claim/Unprocessed/",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@item().name",
+											"type": "Expression"
+										},
+										"FirstRowHeader": "True",
+										"ColumnDelimiter": "|"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "Dataset_AzureSql_Table_Sink",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "land",
+										"TableName": "tbl_medical_claim_Medica",
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "Tredence_Adhoc_Pipelines_for_data_ingestion"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-10-16T06:04:28Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

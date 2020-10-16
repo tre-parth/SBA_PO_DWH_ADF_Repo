@@ -1,0 +1,1617 @@
+{
+	"name": "Test_Pipeline_Load_Medical_Claims_Data",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get File List",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Set Standard File Name",
+						"dependencyConditions": [
+							"Succeeded",
+							"Skipped",
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": {
+								"value": "@variables('ContainerName')",
+								"type": "Expression"
+							},
+							"FolderPath": {
+								"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Unprocessed')",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "@concat('','')",
+								"type": "Expression"
+							},
+							"FirstRowHeader": true,
+							"ColumnDelimiter": "\t"
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Filter Validation and Data Files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Files Filter by year",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Files Filter by year').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Set FileName",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileName",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "If Condition1",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Set FileName",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@equals(pipeline().parameters.DataSource,'HCSC')",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "Append to DataFileList_copy1_copy1",
+										"type": "AppendVariable",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"variableName": "DataFileList",
+											"value": {
+												"value": "@variables('FileName')",
+												"type": "Expression"
+											}
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Filter Data and Validation Files_copy1",
+										"type": "Switch",
+										"dependsOn": [],
+										"userProperties": [],
+										"typeProperties": {
+											"on": {
+												"value": "@substring(item().name,0,1)",
+												"type": "Expression"
+											},
+											"cases": [
+												{
+													"value": "x",
+													"activities": [
+														{
+															"name": "Append to ValidationFileList_copy1",
+															"type": "AppendVariable",
+															"dependsOn": [],
+															"userProperties": [],
+															"typeProperties": {
+																"variableName": "ValidationFileList",
+																"value": {
+																	"value": "@variables('FileName')",
+																	"type": "Expression"
+																}
+															}
+														}
+													]
+												},
+												{
+													"value": "d",
+													"activities": [
+														{
+															"name": "Append to DataFileList_copy1",
+															"type": "AppendVariable",
+															"dependsOn": [],
+															"userProperties": [],
+															"typeProperties": {
+																"variableName": "DataFileList",
+																"value": {
+																	"value": "@variables('FileName')",
+																	"type": "Expression"
+																}
+															}
+														}
+													]
+												}
+											]
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Lookup Standard Name for File",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat('SET QUOTED_IDENTIFIER OFF; ',\n'SELECT file_name FROM m.tbl_cm_data_transfer_client_list WHERE client_name LIKE \"',pipeline().parameters.Client,'%','\" AND data_source = \"',pipeline().parameters.DataSource,'\" AND file_type = \"',pipeline().parameters.File_type,'\"; ',\n'SET QUOTED_IDENTIFIER ON;')",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Dataset_AzureSql_Table_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "m",
+							"TableName": "tbl_cm_data_transfer_client_list",
+							"DatabaseName": {
+								"value": "@pipeline().parameters.DatabaseName",
+								"type": "Expression"
+							}
+						}
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Set Standard File Name",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Set Standard File Format",
+						"dependencyConditions": [
+							"Succeeded",
+							"Failed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StandardFileName",
+					"value": {
+						"value": "@replace(activity('Lookup Standard Name for File').output.firstRow.file_name,concat('YYYYMMDD.',variables('StandardFileFormat')),'')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set Standard File Format",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Lookup Standard Name for File",
+						"dependencyConditions": [
+							"Succeeded",
+							"Failed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "StandardFileFormat",
+					"value": {
+						"value": "@split(activity('Lookup Standard Name for File').output.firstRow.file_name,'.')[1]",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Iterate Data Files",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Filter Validation and Data Files",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@variables('DataFileList')",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Set File Date",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileDate",
+								"value": {
+									"value": "@substring(split(item(),'.')[0],sub(length(split(item(),'.')[0]),8),8)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Validation File Name",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "File_Details",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "ValidationFileName",
+								"value": {
+									"value": "@concat('x',substring(variables('StandardFileName'),1,sub(length(variables('StandardFileName')),1)),variables('FileDate'),'.',variables('StandardFileFormat'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Check Validation File Availability",
+							"type": "Validation",
+							"dependsOn": [
+								{
+									"activity": "Set Validation File Name",
+									"dependencyConditions": [
+										"Succeeded",
+										"Failed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Unprocessed')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@variables('ValidationFileName')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								},
+								"timeout": "0.00:01:00",
+								"sleep": 10
+							}
+						},
+						{
+							"name": "Lookup Account and Record Count from Validation File",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Copy data1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Unprocessed')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@variables('ValidationFileName')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								},
+								"firstRowOnly": false
+							}
+						},
+						{
+							"name": "Set Account for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Account",
+								"value": {
+									"value": "@trim(split(activity('Lookup Account and Record Count from Validation File').output.value[0].Prop_0,':')[1])",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set expected Record Count for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "RecordCount",
+								"value": {
+									"value": "@replace(trim(split(activity('Lookup Account and Record Count from Validation File').output.value[3].Prop_0,':')[1]),',','')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Data FileName",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FileName",
+								"value": {
+									"value": "@item()",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Paid Period for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Paid_Period",
+								"value": {
+									"value": "@trim(split(activity('Lookup Account and Record Count from Validation File').output.value[2].Prop_0,':')[1])",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set expected Total Coinsurance Amount for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Total Coinsurance Amount",
+								"value": {
+									"value": "@replace(trim(split(activity('Lookup Account and Record Count from Validation File').output.value[5].Prop_0,':')[1]),',','')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set expected Total Deductible Amount File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Total Deductible Amount",
+								"value": {
+									"value": "@replace(trim(split(activity('Lookup Account and Record Count from Validation File').output.value[4].Prop_0,':')[1]),',','')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set expected Total Paid Amount for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Total Paid Amount",
+								"value": {
+									"value": "@replace(trim(split(activity('Lookup Account and Record Count from Validation File').output.value[7].Prop_0,':')[1]),',','')\n",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set expected Total Copay Amount for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Lookup Account and Record Count from Validation File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Total Copay Amount",
+								"value": {
+									"value": "@replace(trim(split(activity('Lookup Account and Record Count from Validation File').output.value[6].Prop_0,':')[1]),',','')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Paid Period upper for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set Paid Period for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Paid Period Upper",
+								"value": {
+									"value": "@formatDateTime(trim(split(variables('Paid_Period'),' to ')[1]),'MM/dd/yyyy')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Paid Period lower for File",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set Paid Period for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Paid Period lower",
+								"value": {
+									"value": "@formatDateTime(trim(split(variables('Paid_Period'),' to ')[0]),'MM/dd/yyyy')",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "DataValidation",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Set Account for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set Paid Period upper for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set Paid Period lower for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set expected Record Count for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set expected Total Coinsurance Amount for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set expected Total Deductible Amount File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set expected Total Paid Amount for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set expected Total Copay Amount for File",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[Data_Validation]",
+								"storedProcedureParameters": {
+									"Account_ID": {
+										"value": {
+											"value": "@variables('Account')",
+											"type": "Expression"
+										},
+										"type": "Int64"
+									},
+									"Paid_Period_Lower": {
+										"value": {
+											"value": "@variables('Paid Period lower')",
+											"type": "Expression"
+										}
+									},
+									"Paid_Period_Upper": {
+										"value": {
+											"value": "@variables('Paid Period Upper')",
+											"type": "Expression"
+										}
+									},
+									"Record_Count": {
+										"value": {
+											"value": "@variables('RecordCount')",
+											"type": "Expression"
+										},
+										"type": "Int64"
+									},
+									"Total_Deductible_Amount": {
+										"value": {
+											"value": "@variables('Total Deductible Amount')",
+											"type": "Expression"
+										},
+										"type": "Decimal"
+									},
+									"Total_Coinsurance_Amount": {
+										"value": {
+											"value": "@variables('Total Coinsurance Amount')",
+											"type": "Expression"
+										},
+										"type": "Decimal"
+									},
+									"Total_Copay_Amount": {
+										"value": {
+											"value": "@variables('Total Copay Amount')",
+											"type": "Expression"
+										},
+										"type": "Decimal"
+									},
+									"Total_Paid_Amount": {
+										"value": {
+											"value": "@variables('Total Paid Amount')",
+											"type": "Expression"
+										},
+										"type": "Decimal"
+									},
+									"year": {
+										"value": {
+											"value": "@variables('Year')",
+											"type": "Expression"
+										},
+										"type": "Int64"
+									},
+									"month": {
+										"value": {
+											"value": "@variables('Month')",
+											"type": "Expression"
+										},
+										"type": "Int64"
+									},
+									"filename": {
+										"value": {
+											"value": "@variables('FileName')",
+											"type": "Expression"
+										}
+									},
+									"flag": {
+										"value": ""
+									},
+									"Carrier": {
+										"value": {
+											"value": "@pipeline().parameters.DataSource",
+											"type": "Expression"
+										}
+									},
+									"Client": {
+										"value": {
+											"value": "@pipeline().parameters.Client",
+											"type": "Expression"
+										}
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LinkedService_AzureSqlDatabase_PO",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"DatabaseName": "db-po-warehouse-dev-eus"
+								}
+							}
+						},
+						{
+							"name": "Lookup1",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Check Validation File Availability",
+									"dependencyConditions": [
+										"Succeeded",
+										"Failed"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderStoredProcedureName": "[dbo].[dynamic_column_mapping]",
+									"storedProcedureParameters": {
+										"Carrier": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().parameters.DataSource",
+												"type": "Expression"
+											}
+										}
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "Dataset_AzureSql_Table_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "m",
+										"TableName": "tbl_medical_claim_1",
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							}
+						},
+						{
+							"name": "Copy data1",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Lookup1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"preCopyScript": {
+										"value": "Truncate table land.tbl_medical_claim",
+										"type": "Expression"
+									},
+									"disableMetricsCollection": false
+								},
+								"enableStaging": false,
+								"translator": {
+									"value": "@json(activity('Lookup1').output.firstRow.json_output)",
+									"type": "Expression"
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Unprocessed')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@variables('FileName')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": {
+											"value": "\t",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "Dataset_AzureSql_Table_Sink",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "land",
+										"TableName": {
+											"value": "@pipeline().parameters.landing_table",
+											"type": "Expression"
+										},
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							]
+						},
+						{
+							"name": "Check_Load_Claim_sufficiency_and_completeness",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "DataValidation",
+									"dependencyConditions": [
+										"Succeeded",
+										"Failed",
+										"Skipped"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Check_Load_Claim_sufficiency_and_completeness",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"FileName": {
+										"value": "@variables('FileName')",
+										"type": "Expression"
+									},
+									"FileType": {
+										"value": "@variables('FolderFileType')",
+										"type": "Expression"
+									},
+									"AccountID": {
+										"value": "@variables('Account')",
+										"type": "Expression"
+									},
+									"Year": {
+										"value": "@variables('Year')",
+										"type": "Expression"
+									},
+									"Month": {
+										"value": "@variables('Month')",
+										"type": "Expression"
+									},
+									"Client": {
+										"value": "@pipeline().parameters.Client",
+										"type": "Expression"
+									},
+									"Carrier": {
+										"value": "@pipeline().parameters.DataSource",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "land_to_stg_table",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Check_Load_Claim_sufficiency_and_completeness",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[land_to_stg_table]",
+								"storedProcedureParameters": {
+									"Carrier": {
+										"value": {
+											"value": "@pipeline().parameters.DataSource",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"Client": {
+										"value": {
+											"value": "@pipeline().parameters.Client",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"month": {
+										"value": {
+											"value": "@variables('Month')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"run_instance_skey": {
+										"value": {
+											"value": "@activity('audit_pipeline_start').output.firstRow.run_instance_skey",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"source_file_skey": {
+										"value": {
+											"value": "@activity('File_Details').output.firstRow.source_file_skey",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"year": {
+										"value": {
+											"value": "@variables('Year')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LinkedService_AzureSqlDatabase_PO",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"DatabaseName": "db-po-warehouse-dev-eus"
+								}
+							}
+						},
+						{
+							"name": "audit_pipeline_start",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "Set File Date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "Set Data FileName",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderStoredProcedureName": "[audit].[manage_audit_pipeline_start]",
+									"storedProcedureParameters": {
+										"FILE_NAME": {
+											"type": "String",
+											"value": {
+												"value": "@variables('FileName')",
+												"type": "Expression"
+											}
+										},
+										"PIPELINE_NAME": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().Pipeline",
+												"type": "Expression"
+											}
+										},
+										"PIPELINE_SKEY": {
+											"type": "String",
+											"value": "1"
+										},
+										"STAGE_SKEY": {
+											"type": "String",
+											"value": "10"
+										},
+										"process_type": {
+											"type": "String",
+											"value": "DATA_TRANSFER_BLOB_TO_STG"
+										},
+										"process_name": {
+											"type": "String",
+											"value": "Load Medical_Claim data to Staging"
+										}
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "Dataset_AzureSql_Table_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "audit",
+										"TableName": "audit_job_process_execution_log",
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							}
+						},
+						{
+							"name": "load_status_pass",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "land_to_stg_table",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Load_status",
+								"value": "Success"
+							}
+						},
+						{
+							"name": "Load_status_failed",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "land_to_stg_table",
+									"dependencyConditions": [
+										"Failed",
+										"Skipped"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Load_status",
+								"value": "Failure"
+							}
+						},
+						{
+							"name": "job_process_execution_log_end_",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "load_status_pass",
+									"dependencyConditions": [
+										"Succeeded",
+										"Skipped"
+									]
+								},
+								{
+									"activity": "Load_status_failed",
+									"dependencyConditions": [
+										"Succeeded",
+										"Skipped"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderStoredProcedureName": "[audit].[manage_audit_pipeline_end]",
+									"storedProcedureParameters": {
+										"BAD_RW_COUNT": {
+											"type": "Int32",
+											"value": null
+										},
+										"DELETE_COUNT": {
+											"type": "Int32",
+											"value": null
+										},
+										"DESTINATION_NAME": {
+											"type": "String",
+											"value": {
+												"value": "@concat('stg.',pipeline().parameters.landing_table)",
+												"type": "Expression"
+											}
+										},
+										"DUPLICATE_COUNT": {
+											"type": "Int32",
+											"value": null
+										},
+										"FILE_NAME": {
+											"type": "String",
+											"value": {
+												"value": "@variables('FileName')",
+												"type": "Expression"
+											}
+										},
+										"PACKAGE_STATUS": {
+											"type": "String",
+											"value": {
+												"value": "@variables('Load_Status')",
+												"type": "Expression"
+											}
+										},
+										"PIPELINE_NAME": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().Pipeline",
+												"type": "Expression"
+											}
+										},
+										"PIPELINE_SKEY": {
+											"type": "Int32",
+											"value": "1"
+										},
+										"RUN_INSTANCE_SKEY": {
+											"type": "Int32",
+											"value": {
+												"value": "@activity('audit_pipeline_start').output.firstRow.run_instance_skey",
+												"type": "Expression"
+											}
+										},
+										"SRC_RW_COUNT": {
+											"type": "Int32",
+											"value": {
+												"value": "@activity('Copy data1').output.rowsRead",
+												"type": "Expression"
+											}
+										},
+										"TARGET_RW_CNT": {
+											"type": "Int32",
+											"value": {
+												"value": "@activity('Copy data1').output.rowsCopied",
+												"type": "Expression"
+											}
+										}
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "Dataset_AzureSql_Table_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "audit",
+										"TableName": "AUDIT_JOB_PROCESS_EXECUTION_LOG",
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							}
+						},
+						{
+							"name": "File_Details",
+							"type": "Lookup",
+							"dependsOn": [
+								{
+									"activity": "audit_pipeline_start",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderStoredProcedureName": "[dbo].[File_Details]",
+									"storedProcedureParameters": {
+										"carrier_name": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().parameters.DataSource",
+												"type": "Expression"
+											}
+										},
+										"client_name": {
+											"type": "String",
+											"value": {
+												"value": "@pipeline().parameters.Client",
+												"type": "Expression"
+											}
+										},
+										"month": {
+											"type": "Int32",
+											"value": {
+												"value": "@variables('Month')",
+												"type": "Expression"
+											}
+										},
+										"RUN_INSTANCE_SKEY": {
+											"type": "Int32",
+											"value": {
+												"value": "@activity('audit_pipeline_start').output.firstRow.run_instance_skey",
+												"type": "Expression"
+											}
+										},
+										"source_file_path": {
+											"type": "String",
+											"value": {
+												"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Unprocessed')",
+												"type": "Expression"
+											}
+										},
+										"year": {
+											"type": "Int32",
+											"value": {
+												"value": "@variables('Year')",
+												"type": "Expression"
+											}
+										}
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"dataset": {
+									"referenceName": "Dataset_AzureSql_Table_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "m",
+										"TableName": "file_details",
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							}
+						},
+						{
+							"name": "Set Month_copy1",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set File Date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Month",
+								"value": {
+									"value": "@substring(variables('FileDate'),4,2)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set Year_copy1",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "Set File Date",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Year",
+								"value": {
+									"value": "@substring(variables('FileDate'),0,4)",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "End File Details",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "job_process_execution_log_end_",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[audit].[END_File_Details]",
+								"storedProcedureParameters": {
+									"archive_file_path": {
+										"value": {
+											"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Processed')",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"carrier_name": {
+										"value": {
+											"value": "@pipeline().parameters.DataSource",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"client_name": {
+										"value": {
+											"value": "@pipeline().parameters.Client",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"month": {
+										"value": {
+											"value": "@variables('Month')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"reject_file_path": {
+										"value": {
+											"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Rejected')",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"RUN_INSTANCE_SKEY": {
+										"value": {
+											"value": "@activity('audit_pipeline_start').output.firstRow.run_instance_skey",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"source_file_path": {
+										"value": {
+											"value": "@concat(pipeline().parameters.DataSource,'/',pipeline().parameters.Client,'/',pipeline().parameters.File_type,'/','Unprocessed')",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"year": {
+										"value": {
+											"value": "@variables('Year')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									},
+									"Flag": {
+										"value": {
+											"value": "@variables('Load_Status')",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LinkedService_AzureSqlDatabase_PO",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"DatabaseName": "db-po-warehouse-dev-eus"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Files Filter by year",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get File List",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get File List').output.childitems",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@greater(substring(split(item().name,'.')[0],sub(length(split(item().name,'.')[0]),8),4),'2017')",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"DataSource": {
+				"type": "string"
+			},
+			"Client": {
+				"type": "string"
+			},
+			"DatabaseName": {
+				"type": "string",
+				"defaultValue": "db-po-warehouse-dev-eus"
+			},
+			"ActualDataSource": {
+				"type": "string"
+			},
+			"landing_table": {
+				"type": "string",
+				"defaultValue": "tbl_medical_claim"
+			},
+			"File_type": {
+				"type": "string",
+				"defaultValue": "Medical_Claim"
+			}
+		},
+		"variables": {
+			"ContainerName": {
+				"type": "String",
+				"defaultValue": "po-warehouse-data"
+			},
+			"DataSource": {
+				"type": "String"
+			},
+			"Client": {
+				"type": "String"
+			},
+			"FolderFileType": {
+				"type": "String",
+				"defaultValue": "Medical_Claim"
+			},
+			"FileName": {
+				"type": "String"
+			},
+			"StandardFileName": {
+				"type": "String"
+			},
+			"ValidationFileName": {
+				"type": "String"
+			},
+			"DataFileList": {
+				"type": "Array"
+			},
+			"ValidationFileList": {
+				"type": "Array"
+			},
+			"StandardFileFormat": {
+				"type": "String"
+			},
+			"AccountFlag": {
+				"type": "Boolean"
+			},
+			"RecordCountFlag": {
+				"type": "Boolean"
+			},
+			"FileDate": {
+				"type": "String"
+			},
+			"ValidationFile": {
+				"type": "String"
+			},
+			"ValidationFileAvailable": {
+				"type": "Boolean"
+			},
+			"Account": {
+				"type": "String"
+			},
+			"RecordCount": {
+				"type": "String"
+			},
+			"AggregateFileName": {
+				"type": "String"
+			},
+			"DQ1RunFlag": {
+				"type": "String"
+			},
+			"ActualRecordCount": {
+				"type": "String"
+			},
+			"ActualAccount": {
+				"type": "String"
+			},
+			"ColumnCount": {
+				"type": "String"
+			},
+			"FileType": {
+				"type": "String",
+				"defaultValue": "Medical"
+			},
+			"Paid_Period": {
+				"type": "String"
+			},
+			"Total Deductible Amount": {
+				"type": "String"
+			},
+			"Total Coinsurance Amount": {
+				"type": "String"
+			},
+			"Total Copay Amount": {
+				"type": "String"
+			},
+			"Total Paid Amount": {
+				"type": "String"
+			},
+			"Paid Period lower": {
+				"type": "String"
+			},
+			"Paid Period Upper": {
+				"type": "String"
+			},
+			"Month": {
+				"type": "String"
+			},
+			"Year": {
+				"type": "String"
+			},
+			"Yearlist": {
+				"type": "Array"
+			},
+			"Load_status": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-09-23T17:04:29Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,42 @@
+{
+	"name": "Dataset_Excel_ADLS_Gen2_SRC",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LinkedService_AzureDataLakeStorage_PO",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"Container_name": {
+				"type": "string"
+			},
+			"Folder_name": {
+				"type": "string"
+			},
+			"Sheet_name": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": {
+				"value": "@dataset().Sheet_name",
+				"type": "Expression"
+			},
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "@dataset().Folder_name",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().Container_name",
+					"type": "Expression"
+				}
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

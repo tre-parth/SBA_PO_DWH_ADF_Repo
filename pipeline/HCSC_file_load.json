@@ -1,0 +1,1629 @@
+{
+	"name": "HCSC_file_load",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata1",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": "po-warehouse-data",
+							"FolderPath": "HCSC/",
+							"FileName": "@concat('','')",
+							"FirstRowHeader": true,
+							"ColumnDelimiter": "  "
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata1').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Copy HCSC House Medical Claims Data_copy1",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata1_copy1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "DelimitedTextSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "DelimitedTextReadSettings"
+									}
+								},
+								"sink": {
+									"type": "AzureSqlSink",
+									"tableOption": "autoCreate"
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 1
+											},
+											"sink": {
+												"name": "Account_Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 2
+											},
+											"sink": {
+												"name": "Claim_Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 3
+											},
+											"sink": {
+												"name": "Claim_Extention",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 4
+											},
+											"sink": {
+												"name": "Line_Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 5
+											},
+											"sink": {
+												"name": "Line_of_Business_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 6
+											},
+											"sink": {
+												"name": "First_Date_of_Service",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 7
+											},
+											"sink": {
+												"name": "Paid_Date",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 8
+											},
+											"sink": {
+												"name": "Debit_Credit_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 9
+											},
+											"sink": {
+												"name": "Member_Key",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 10
+											},
+											"sink": {
+												"name": "Disposition_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 11
+											},
+											"sink": {
+												"name": "Group_Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 12
+											},
+											"sink": {
+												"name": "Section_Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 13
+											},
+											"sink": {
+												"name": "Subscriber_ID",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 14
+											},
+											"sink": {
+												"name": "Subscriber_SSN",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 15
+											},
+											"sink": {
+												"name": "Patient_DOB",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 16
+											},
+											"sink": {
+												"name": "Patient_SSN",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 17
+											},
+											"sink": {
+												"name": "Patient_Gender",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 18
+											},
+											"sink": {
+												"name": "Patient_Relationship",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 19
+											},
+											"sink": {
+												"name": "Patient_First_Name",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 20
+											},
+											"sink": {
+												"name": "Patient_Middle_Name",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 21
+											},
+											"sink": {
+												"name": "Patient_Last_Name",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 22
+											},
+											"sink": {
+												"name": "Patient_Zip_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 23
+											},
+											"sink": {
+												"name": "Medicare_Primary_Indicator",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 24
+											},
+											"sink": {
+												"name": "Ineligible_Reason_Code_1",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 25
+											},
+											"sink": {
+												"name": "Ineligible_Reason_Code_2",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 26
+											},
+											"sink": {
+												"name": "Ineligible_Reason_Code_3",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 27
+											},
+											"sink": {
+												"name": "Last_Date_of_Service",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 28
+											},
+											"sink": {
+												"name": "Admission_Date",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 29
+											},
+											"sink": {
+												"name": "Discharge_Date",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 30
+											},
+											"sink": {
+												"name": "Received_Date",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 31
+											},
+											"sink": {
+												"name": "Procedure_Code_Modifier",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 32
+											},
+											"sink": {
+												"name": "Policy_Type_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 33
+											},
+											"sink": {
+												"name": "Claim_Origin_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 34
+											},
+											"sink": {
+												"name": "CCP_Program_Indicator",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 35
+											},
+											"sink": {
+												"name": "CCP_Requirement_MET_code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 36
+											},
+											"sink": {
+												"name": "Diagnosis_Classification_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 37
+											},
+											"sink": {
+												"name": "Diagnosis_Category_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 38
+											},
+											"sink": {
+												"name": "Diagnosis_Code_1",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 39
+											},
+											"sink": {
+												"name": "Diagnosis_Code_2",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 40
+											},
+											"sink": {
+												"name": "Diagnosis_Code_3",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 41
+											},
+											"sink": {
+												"name": "Diagnosis_Code_4",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 42
+											},
+											"sink": {
+												"name": "Diagnosis_Code_5",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 43
+											},
+											"sink": {
+												"name": "HCPCS_CPT_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 44
+											},
+											"sink": {
+												"name": "Revenue_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 45
+											},
+											"sink": {
+												"name": "ICD_Version_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 46
+											},
+											"sink": {
+												"name": "ICD_Procedure_Code_1",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 47
+											},
+											"sink": {
+												"name": "ICD_Procedure_Code_2",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 48
+											},
+											"sink": {
+												"name": "ICD_Procedure_Code_3",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 49
+											},
+											"sink": {
+												"name": "Place_of_Treatment",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 50
+											},
+											"sink": {
+												"name": "Type_of_Service",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 51
+											},
+											"sink": {
+												"name": "DRG",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 52
+											},
+											"sink": {
+												"name": "MDC",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 53
+											},
+											"sink": {
+												"name": "Patient_Status",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 54
+											},
+											"sink": {
+												"name": "Payment_Tier_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 55
+											},
+											"sink": {
+												"name": "Services",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 56
+											},
+											"sink": {
+												"name": "Admission_Indicator",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 57
+											},
+											"sink": {
+												"name": "Day_Count",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 58
+											},
+											"sink": {
+												"name": "Visit_Indicator",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 59
+											},
+											"sink": {
+												"name": "Filler1",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 60
+											},
+											"sink": {
+												"name": "Filler2",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 61
+											},
+											"sink": {
+												"name": "Filler3",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 62
+											},
+											"sink": {
+												"name": "Deductible_Amount",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 63
+											},
+											"sink": {
+												"name": "Coinsurance_Amount",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 64
+											},
+											"sink": {
+												"name": "Copay_Amount",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 65
+											},
+											"sink": {
+												"name": "Paid_Amount",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 66
+											},
+											"sink": {
+												"name": "Filler4",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 67
+											},
+											"sink": {
+												"name": "Filler5",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 68
+											},
+											"sink": {
+												"name": "Filler6",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 69
+											},
+											"sink": {
+												"name": "Filler7",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 70
+											},
+											"sink": {
+												"name": "Filler8",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 71
+											},
+											"sink": {
+												"name": "Filler9",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 72
+											},
+											"sink": {
+												"name": "Filler10",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 73
+											},
+											"sink": {
+												"name": "Filler11",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 74
+											},
+											"sink": {
+												"name": "Claim_Filing_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 75
+											},
+											"sink": {
+												"name": "Adjustment_Sequence_Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 76
+											},
+											"sink": {
+												"name": "Procedure_Code_Modifier2",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 77
+											},
+											"sink": {
+												"name": "Payee_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 78
+											},
+											"sink": {
+												"name": "Bill_Type_Class_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 79
+											},
+											"sink": {
+												"name": "Bill_Frequency_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 80
+											},
+											"sink": {
+												"name": "Bill_Institutional_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 81
+											},
+											"sink": {
+												"name": "Filler12",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 82
+											},
+											"sink": {
+												"name": "Filler13",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 83
+											},
+											"sink": {
+												"name": "Filler14",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 84
+											},
+											"sink": {
+												"name": "Filler15",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 85
+											},
+											"sink": {
+												"name": "Filler16",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 86
+											},
+											"sink": {
+												"name": "Filler17",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 87
+											},
+											"sink": {
+												"name": "Filler18",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 88
+											},
+											"sink": {
+												"name": "Filler19",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 89
+											},
+											"sink": {
+												"name": "Filler20",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 90
+											},
+											"sink": {
+												"name": "Filler21",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 91
+											},
+											"sink": {
+												"name": "Filler22",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 92
+											},
+											"sink": {
+												"name": "Filler23",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 93
+											},
+											"sink": {
+												"name": "Filler24",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 94
+											},
+											"sink": {
+												"name": "Filler25",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 95
+											},
+											"sink": {
+												"name": "Filler26",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 96
+											},
+											"sink": {
+												"name": "Filler27",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 97
+											},
+											"sink": {
+												"name": "Filler28",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 98
+											},
+											"sink": {
+												"name": "Filler29",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 99
+											},
+											"sink": {
+												"name": "Filler30",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 100
+											},
+											"sink": {
+												"name": "Filler31",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 101
+											},
+											"sink": {
+												"name": "Filler32",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 102
+											},
+											"sink": {
+												"name": "Filler33",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 103
+											},
+											"sink": {
+												"name": "Filler34",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 104
+											},
+											"sink": {
+												"name": "Filler35",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 105
+											},
+											"sink": {
+												"name": "RX_ID",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 106
+											},
+											"sink": {
+												"name": "RX_National_Drug_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 107
+											},
+											"sink": {
+												"name": "RX_Drug_Name",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 108
+											},
+											"sink": {
+												"name": "RX_Drug_Type_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 109
+											},
+											"sink": {
+												"name": "RX_Drug_Category_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 110
+											},
+											"sink": {
+												"name": "RX_Tier_Level_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 111
+											},
+											"sink": {
+												"name": "RX_Therapeutic_Class",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 112
+											},
+											"sink": {
+												"name": "RX_DEA_Number",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 113
+											},
+											"sink": {
+												"name": "RX_Mail_Order_Indicator",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 114
+											},
+											"sink": {
+												"name": "RX_Dispense_as_Written",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 115
+											},
+											"sink": {
+												"name": "Filler36",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 116
+											},
+											"sink": {
+												"name": "Filler37",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 117
+											},
+											"sink": {
+												"name": "Filler38",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 118
+											},
+											"sink": {
+												"name": "RX_Metric_Quantity",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 119
+											},
+											"sink": {
+												"name": "RX_Days_Supply",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 120
+											},
+											"sink": {
+												"name": "RX_Origin_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 121
+											},
+											"sink": {
+												"name": "RX_GPI",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 122
+											},
+											"sink": {
+												"name": "RX_Generic_Paid_Indicator",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 123
+											},
+											"sink": {
+												"name": "Rx_Chain_Pharmacy_ID",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 124
+											},
+											"sink": {
+												"name": "Rx_Formulary_Drug_Indicator",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 125
+											},
+											"sink": {
+												"name": "RX_Compound_Code",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 126
+											},
+											"sink": {
+												"name": "Filler39",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 127
+											},
+											"sink": {
+												"name": "Filler40",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 128
+											},
+											"sink": {
+												"name": "Filler41",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 129
+											},
+											"sink": {
+												"name": "Filler42",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 130
+											},
+											"sink": {
+												"name": "Filler43",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										},
+										{
+											"source": {
+												"type": "String",
+												"ordinal": 131
+											},
+											"sink": {
+												"name": "Filler44",
+												"type": "String",
+												"physicalType": "nvarchar"
+											}
+										}
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": "po-warehouse-data",
+										"FolderPath": {
+											"value": "@concat('HCSC/',item().name,'/Medical_Claim/Unprocessed')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@activity('Get Metadata1_copy1').output.childItems[1].name",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "Dataset_AzureSql_Table_Sink",
+									"type": "DatasetReference",
+									"parameters": {
+										"SchemaName": "land",
+										"TableName": "tbl_medical_claim_HCSC",
+										"DatabaseName": "db-po-warehouse-dev-eus"
+									}
+								}
+							]
+						},
+						{
+							"name": "Get Metadata1_copy1",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": "po-warehouse-data",
+										"FolderPath": {
+											"value": "@concat('HCSC/',item().name,'/','Medical_Claim/Unprocessed/')",
+											"type": "Expression"
+										},
+										"FileName": "@concat('','')",
+										"FirstRowHeader": true,
+										"ColumnDelimiter": "  "
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"folder": {
+			"name": "Tredence_Adhoc_Pipelines_for_data_ingestion"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-10-16T06:04:28Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

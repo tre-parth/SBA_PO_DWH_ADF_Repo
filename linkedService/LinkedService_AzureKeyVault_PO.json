@@ -1,0 +1,11 @@
+{
+	"name": "LinkedService_AzureKeyVault_PO",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-po-warehouse-dev-eus.vault.azure.net/"
+		}
+	}
+}

@@ -1,0 +1,110 @@
+{
+	"name": "dynamic_column_mapping",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup1",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderStoredProcedureName": "[dbo].[dynamic_column_mapping]",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Dataset_AzureSql_Table_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "m",
+							"TableName": "tbl_medical_claim_1",
+							"DatabaseName": "db-po-warehouse-dev-eus"
+						}
+					}
+				}
+			},
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Lookup1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink"
+					},
+					"enableStaging": false,
+					"translator": {
+						"value": "@json(activity('Lookup1').output.firstRow.json_output)",
+						"type": "Expression"
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": "po-warehouse-data",
+							"FolderPath": "Test/HCSC House/Medical_Claim/Unprocessed",
+							"FileName": "dHCSCconsumermedClaim20200430.txt",
+							"FirstRowHeader": false,
+							"ColumnDelimiter": {
+								"value": "\t",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Dataset_AzureSql_Table_Sink",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "land",
+							"TableName": "tbl_medical_claim_3",
+							"DatabaseName": "db-po-warehouse-dev-eus"
+						}
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-09-04T10:37:55Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

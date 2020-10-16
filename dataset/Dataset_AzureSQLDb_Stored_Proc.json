@@ -1,0 +1,16 @@
+{
+	"name": "Dataset_AzureSQLDb_Stored_Proc",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LinkedService_AzureSqlDatabase_PO",
+			"type": "LinkedServiceReference",
+			"parameters": {
+				"DatabaseName": "db-po-warehouse-dev-eus"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

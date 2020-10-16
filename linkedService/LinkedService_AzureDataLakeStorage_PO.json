@@ -1,0 +1,11 @@
+{
+	"name": "LinkedService_AzureDataLakeStorage_PO",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://stpowarehousedeveus.dfs.core.windows.net"
+		}
+	}
+}

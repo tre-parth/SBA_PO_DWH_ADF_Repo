@@ -1,0 +1,30 @@
+{
+	"name": "Trigger-Test-HCSC House-Eligibility-BlobCreateEvent",
+	"properties": {
+		"annotations": [],
+		"runtimeState": "Stopped",
+		"pipelines": [
+			{
+				"pipelineReference": {
+					"referenceName": "Pipeline_Load_Eligibility_Data",
+					"type": "PipelineReference"
+				},
+				"parameters": {
+					"DataSource": "Test",
+					"Client": "HCSC House",
+					"DatabaseName": "db-po-warehouse-dev-eus",
+					"ActualDataSource": "HCSC"
+				}
+			}
+		],
+		"type": "BlobEventsTrigger",
+		"typeProperties": {
+			"blobPathBeginsWith": "/po-warehouse-data/blobs/Test/HCSC House/Eligibility/Unprocessed/d",
+			"ignoreEmptyBlobs": true,
+			"scope": "/subscriptions/baec40ee-273b-4b23-81aa-dde9e1352c06/resourceGroups/po-warehouse-dev/providers/Microsoft.Storage/storageAccounts/stpowarehousedeveus",
+			"events": [
+				"Microsoft.Storage.BlobCreated"
+			]
+		}
+	}
+}

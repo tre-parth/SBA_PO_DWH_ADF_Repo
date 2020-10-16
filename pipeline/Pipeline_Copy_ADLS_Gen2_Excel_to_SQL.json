@@ -1,0 +1,265 @@
+{
+	"name": "Pipeline_Copy_ADLS_Gen2_Excel_to_SQL",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy CM Claims Client Inventory List",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "Client ID",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "client_id",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "Client Name",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "client_name",
+									"type": "String",
+									"physicalType": "text"
+								}
+							},
+							{
+								"source": {
+									"name": "Channel",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "channel",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "Carrier",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "carrier",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "Data Source",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "data_source",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "File Type",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "file_type",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "File Name",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "file_name",
+									"type": "String",
+									"physicalType": "text"
+								}
+							},
+							{
+								"source": {
+									"name": "Layout File Path",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "layout_file_path",
+									"type": "String",
+									"physicalType": "text"
+								}
+							},
+							{
+								"source": {
+									"name": "Input File Path",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "input_file_path",
+									"type": "String",
+									"physicalType": "text"
+								}
+							},
+							{
+								"source": {
+									"name": "PO Active",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "po_active",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "Aggregate File (receive multiple clients on the same file)",
+									"type": "String",
+									"physicalType": "String"
+								},
+								"sink": {
+									"name": "aggregate_file",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Dataset_Excel_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"FolderPath": {
+								"value": "@concat('','')",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "@pipeline().parameters.FileName",
+								"type": "Expression"
+							},
+							"SheetName": {
+								"value": "@pipeline().parameters.SheetName",
+								"type": "Expression"
+							},
+							"DataRange": {
+								"value": "@pipeline().parameters.DataRange",
+								"type": "Expression"
+							},
+							"ContainerName": {
+								"value": "@variables('ContainerName')",
+								"type": "Expression"
+							},
+							"HeaderFlag": true
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Dataset_AzureSql_Table_Sink",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": {
+								"value": "@pipeline().parameters.SchemaName",
+								"type": "Expression"
+							},
+							"TableName": {
+								"value": "@pipeline().parameters.TableName",
+								"type": "Expression"
+							},
+							"DatabaseName": {
+								"value": "@pipeline().parameters.DatabaseName",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"SchemaName": {
+				"type": "string",
+				"defaultValue": "map"
+			},
+			"TableName": {
+				"type": "string",
+				"defaultValue": "cm_data_transfer_client_list"
+			},
+			"FolderPath": {
+				"type": "string"
+			},
+			"FileName": {
+				"type": "string",
+				"defaultValue": "CM Data Transfer Client List 20200723.xlsx"
+			},
+			"SheetName": {
+				"type": "string",
+				"defaultValue": "File Ingestion"
+			},
+			"DatabaseName": {
+				"type": "string",
+				"defaultValue": "sba_cm_po"
+			},
+			"DataRange": {
+				"type": "string",
+				"defaultValue": "A1:L203"
+			}
+		},
+		"variables": {
+			"ContainerName": {
+				"type": "String",
+				"defaultValue": "po-warehouse-data"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-08-20T07:27:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

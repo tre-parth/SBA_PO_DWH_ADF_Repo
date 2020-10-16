@@ -1,0 +1,391 @@
+{
+	"name": "Pipeline_Load_Code_Files",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup2",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT [seq_key]\n      ,[source_file]\n      ,[container_name]\n      ,[source_file_path]\n      ,[archive_file_path]\n      ,[reject_file_path]\n      ,[source_file_name]\n      ,[sheet_name]\n      ,[database_name]\n      ,[target_schema_name]\n      ,[target_table_name]\n      ,[stored_procedure_schema]\n      ,[stored_procedure_name]\n  FROM [m].[tbl_config_code_files_v2];",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Dataset_AzureSql_Table_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "m",
+							"TableName": "tbl_config_code_files_v2",
+							"DatabaseName": "db-po-warehouse-dev-eus"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup2",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup2').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Get Metadata1",
+							"type": "GetMetadata",
+							"dependsOn": [
+								{
+									"activity": "Set variable1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Delete",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@item().container_name",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@item().source_file_path",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "If Condition1",
+							"type": "IfCondition",
+							"dependsOn": [
+								{
+									"activity": "Filter1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@greater(activity('Filter1').output.FilteredItemsCount,0)",
+									"type": "Expression"
+								},
+								"ifTrueActivities": [
+									{
+										"name": "Lookup1",
+										"type": "Lookup",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "AzureSqlSource",
+												"sqlReaderStoredProcedureName": "[dbo].[code_file_dynamic_column_mapping]",
+												"storedProcedureParameters": {
+													"stage_table_name": {
+														"type": "String",
+														"value": {
+															"value": "@item().target_table_name",
+															"type": "Expression"
+														}
+													}
+												},
+												"queryTimeout": "02:00:00",
+												"partitionOption": "None"
+											},
+											"dataset": {
+												"referenceName": "Dataset_AzureSQLDb_Stored_Proc",
+												"type": "DatasetReference"
+											}
+										}
+									},
+									{
+										"name": "Copy data1",
+										"type": "Copy",
+										"dependsOn": [
+											{
+												"activity": "Lookup1",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "ExcelSource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": true,
+													"wildcardFileName": {
+														"value": "@concat(item().source_file_name,'*')",
+														"type": "Expression"
+													}
+												}
+											},
+											"sink": {
+												"type": "AzureSqlSink",
+												"preCopyScript": {
+													"value": "truncate table @{concat(item().target_schema_name,'.',item().target_table_name)}",
+													"type": "Expression"
+												},
+												"disableMetricsCollection": false
+											},
+											"enableStaging": false,
+											"translator": {
+												"value": "@json(activity('Lookup1').output.firstRow.json_output)",
+												"type": "Expression"
+											}
+										},
+										"inputs": [
+											{
+												"referenceName": "Dataset_Excel_ADLS_Gen2_SRC",
+												"type": "DatasetReference",
+												"parameters": {
+													"Container_name": {
+														"value": "@item().container_name",
+														"type": "Expression"
+													},
+													"Folder_name": {
+														"value": "@item().source_file_path",
+														"type": "Expression"
+													},
+													"Sheet_name": {
+														"value": "@item().sheet_name",
+														"type": "Expression"
+													}
+												}
+											}
+										],
+										"outputs": [
+											{
+												"referenceName": "Dataset_AzureSql_Table_Sink",
+												"type": "DatasetReference",
+												"parameters": {
+													"SchemaName": {
+														"value": "@item().target_schema_name",
+														"type": "Expression"
+													},
+													"TableName": {
+														"value": "@item().target_table_name",
+														"type": "Expression"
+													},
+													"DatabaseName": {
+														"value": "@item().database_name",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									},
+									{
+										"name": "Stored procedure1",
+										"type": "SqlServerStoredProcedure",
+										"dependsOn": [
+											{
+												"activity": "Copy data1",
+												"dependencyConditions": [
+													"Succeeded"
+												]
+											}
+										],
+										"policy": {
+											"timeout": "7.00:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"storedProcedureName": {
+												"value": "@concat(item().stored_procedure_schema,'.',item().stored_procedure_name)",
+												"type": "Expression"
+											}
+										},
+										"linkedServiceName": {
+											"referenceName": "LinkedService_AzureSqlDatabase_PO",
+											"type": "LinkedServiceReference",
+											"parameters": {
+												"DatabaseName": {
+													"value": "@item().database_name",
+													"type": "Expression"
+												}
+											}
+										}
+									}
+								]
+							}
+						},
+						{
+							"name": "Filter1",
+							"type": "Filter",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"items": {
+									"value": "@activity('Get Metadata1').output.childItems",
+									"type": "Expression"
+								},
+								"condition": {
+									"value": "@startswith(item().name,variables('source_file_name'))",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set variable1",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "source_file_name",
+								"value": {
+									"value": "@item().source_file_name",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Set variable2",
+							"type": "SetVariable",
+							"dependsOn": [
+								{
+									"activity": "If Condition1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "file_name_array",
+								"value": {
+									"value": "@activity('Filter1').output.value",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Execute Pipeline1",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Set variable2",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Pipeline_Archieve_Code_File",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"file_name_array": {
+										"value": "@variables('file_name_array')",
+										"type": "Expression"
+									},
+									"container_name": {
+										"value": "@item().container_name",
+										"type": "Expression"
+									},
+									"source_file_path": {
+										"value": "@item().source_file_path",
+										"type": "Expression"
+									},
+									"target_file_path": {
+										"value": "@item().archive_file_path",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"source_file_name": {
+				"type": "String"
+			},
+			"file_name_array": {
+				"type": "Array"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-09-25T08:05:24Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

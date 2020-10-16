@@ -1,0 +1,227 @@
+{
+	"name": "Pipeline_Load_CM_Data_Transfer_Client_List",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"type": "String",
+									"ordinal": 1
+								},
+								"sink": {
+									"name": "client_id",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"ordinal": 2
+								},
+								"sink": {
+									"name": "client_name",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"ordinal": 4
+								},
+								"sink": {
+									"name": "channel",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"ordinal": 5
+								},
+								"sink": {
+									"name": "carrier",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"ordinal": 6
+								},
+								"sink": {
+									"name": "data_source",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"ordinal": 7
+								},
+								"sink": {
+									"name": "file_type",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"physicalType": "String",
+									"ordinal": 11
+								},
+								"sink": {
+									"name": "file_name",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"physicalType": "String",
+									"ordinal": 12
+								},
+								"sink": {
+									"name": "layout_file_path",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"physicalType": "String",
+									"ordinal": 13
+								},
+								"sink": {
+									"name": "input_file_path",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"physicalType": "String",
+									"ordinal": 20
+								},
+								"sink": {
+									"name": "po_active",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"type": "String",
+									"physicalType": "String",
+									"ordinal": 21
+								},
+								"sink": {
+									"name": "aggregate_file",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Dataset_Excel_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"FolderPath": {
+								"value": "PO_WH_Development_Docs/Layout",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "CM PO Client List 20201008_JBC.xlsx",
+								"type": "Expression"
+							},
+							"SheetName": {
+								"value": "File Ingestion",
+								"type": "Expression"
+							},
+							"DataRange": {
+								"value": "A2:U265",
+								"type": "Expression"
+							},
+							"ContainerName": {
+								"value": "po-warehouse-data",
+								"type": "Expression"
+							},
+							"HeaderFlag": {
+								"value": "false",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Dataset_AzureSql_Table_Sink",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": {
+								"value": "m",
+								"type": "Expression"
+							},
+							"TableName": {
+								"value": "tbl_cm_data_transfer_client_list_temp",
+								"type": "Expression"
+							},
+							"DatabaseName": {
+								"value": "db-po-warehouse-dev-eus",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-10-16T06:04:47Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,274 @@
+{
+	"name": "Pipeline_File_Watcher",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Client List",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Set Data Source Hardcoded",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": {
+								"value": "@variables('ContainerName')",
+								"type": "Expression"
+							},
+							"FolderPath": {
+								"value": "@variables('DataSource')",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "@concat('','')",
+								"type": "Expression"
+							},
+							"FirstRowHeader": false,
+							"ColumnDelimiter": "\t"
+						}
+					},
+					"fieldList": [
+						"itemType",
+						"itemName",
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Set Data Source",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Iterate through each Client folder",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "DataSource",
+					"value": {
+						"value": "@split(pipeline().TriggerName,'_')[1]",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set Data Source Hardcoded",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "DataSource",
+					"value": "Test"
+				}
+			},
+			{
+				"name": "Iterate through each Client folder",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Client List",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Client List').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Get Client Eligibility Info",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(variables('DataSource'),'/',item().name,'/','Eligibility')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat('','')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								},
+								"fieldList": [
+									"exists",
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Get Client Medical Claim Info",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(variables('DataSource'),'/',item().name,'/','Eligibility')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat('','')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								},
+								"fieldList": [
+									"exists"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Get Client RX Claim Info",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+									"type": "DatasetReference",
+									"parameters": {
+										"ContainerName": {
+											"value": "@variables('ContainerName')",
+											"type": "Expression"
+										},
+										"FolderPath": {
+											"value": "@concat(variables('DataSource'),'/',item().name,'/','Eligibility')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat('','')",
+											"type": "Expression"
+										},
+										"FirstRowHeader": false,
+										"ColumnDelimiter": "\t"
+									}
+								},
+								"fieldList": [
+									"exists",
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"Client": {
+				"type": "String"
+			},
+			"DataSource": {
+				"type": "String"
+			},
+			"FileName": {
+				"type": "String"
+			},
+			"FileType": {
+				"type": "String"
+			},
+			"ContainerName": {
+				"type": "String",
+				"defaultValue": "po-warehouse-data"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-08-20T07:27:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

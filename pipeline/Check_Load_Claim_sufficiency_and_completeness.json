@@ -1,0 +1,190 @@
+{
+	"name": "Check_Load_Claim_sufficiency_and_completeness",
+	"properties": {
+		"activities": [
+			{
+				"name": "Lookup1",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT \n        B.[LEGEND] AS 'Field' \n    FROM [m].[tbl_column_mapping] as B join m.tbl_HCSC_column_mapping as A \n\tON A.[FIELD NAME] = B.[HCSC]",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "Dataset_AzureSql_Table_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "m",
+							"TableName": {
+								"value": "@variables('table')",
+								"type": "Expression"
+							},
+							"DatabaseName": "db-po-warehouse-dev-eus"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1_copy1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Lookup1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Lookup1').output.value",
+						"type": "Expression"
+					},
+					"isSequential": false,
+					"activities": [
+						{
+							"name": "Stored procedure1_copy1",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[audit].[USP_MEDICAL_CLAIMS_SUFFICIENCY_AND_COMPLETENESS_VALIDATION]",
+								"storedProcedureParameters": {
+									"Field_Name": {
+										"value": {
+											"value": "@item().Field",
+											"type": "Expression"
+										}
+									},
+									"source_file_name": {
+										"value": {
+											"value": "@pipeline().parameters.FileName",
+											"type": "Expression"
+										}
+									},
+									"source_file_type": {
+										"value": {
+											"value": "@pipeline().parameters.FileType",
+											"type": "Expression"
+										}
+									},
+									"AccountID": {
+										"value": {
+											"value": "@pipeline().parameters.AccountID",
+											"type": "Expression"
+										}
+									},
+									"Year": {
+										"value": {
+											"value": "@pipeline().parameters.Year",
+											"type": "Expression"
+										}
+									},
+									"Month": {
+										"value": {
+											"value": "@pipeline().parameters.Month",
+											"type": "Expression"
+										}
+									},
+									"Carrier": {
+										"value": {
+											"value": "@pipeline().parameters.Carrier",
+											"type": "Expression"
+										}
+									},
+									"Client": {
+										"value": {
+											"value": "@pipeline().parameters.Client",
+											"type": "Expression"
+										}
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LinkedService_AzureSqlDatabase_PO",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"DatabaseName": "db-po-warehouse-dev-eus"
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"ContainerName": {
+				"type": "string"
+			},
+			"FolderPath": {
+				"type": "string"
+			},
+			"FileName": {
+				"type": "string"
+			},
+			"FirstRowHeader": {
+				"type": "string"
+			},
+			"FileType": {
+				"type": "string"
+			},
+			"AccountID": {
+				"type": "int"
+			},
+			"Year": {
+				"type": "string"
+			},
+			"Month": {
+				"type": "string"
+			},
+			"Client": {
+				"type": "string"
+			},
+			"Carrier": {
+				"type": "string"
+			}
+		},
+		"variables": {
+			"table": {
+				"type": "String",
+				"defaultValue": "tbl_HCSC_column_mapping"
+			},
+			"Var": {
+				"type": "Array"
+			},
+			"sdf": {
+				"type": "String",
+				"defaultValue": "Field Name"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-09-14T08:41:18Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

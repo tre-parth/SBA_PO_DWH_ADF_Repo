@@ -1,0 +1,38 @@
+{
+	"name": "DataFlow_Distinct_Account_Record_Count",
+	"properties": {
+		"folder": {
+			"name": "Tredence"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference"
+					},
+					"name": "RecordCount"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_DF_Sink",
+						"type": "DatasetReference"
+					},
+					"name": "ValidationResult"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Aggregate1"
+				},
+				{
+					"name": "Select1"
+				}
+			],
+			"script": "parameters{\n\tSrcFolderPath as string,\n\tSrcFileName as string,\n\tTgtFolderPath as string,\n\tTgtFileName as string\n}\nsource(output(\n\t\tcol0 as string,\n\t\tcol1 as string,\n\t\tcol2 as string,\n\t\tcol3 as string,\n\t\tcol4 as string,\n\t\tcol5 as string,\n\t\tcol6 as string,\n\t\tcol7 as string,\n\t\tcol8 as string,\n\t\tcol9 as string,\n\t\tcol10 as string,\n\t\tcol11 as string,\n\t\tcol12 as string,\n\t\tcol13 as string,\n\t\tcol14 as string,\n\t\tcol15 as string,\n\t\tcol16 as string,\n\t\tcol17 as string,\n\t\tcol18 as string,\n\t\tcol19 as string,\n\t\tcol20 as string,\n\t\tcol21 as string,\n\t\tcol22 as string,\n\t\tcol23 as string,\n\t\tcol24 as string,\n\t\tcol25 as string,\n\t\tcol26 as string,\n\t\tcol27 as string,\n\t\tcol28 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false,\n\twildcardPaths:[($SrcFolderPath+$SrcFileName)]) ~> RecordCount\nSelect1 aggregate(groupBy({Account Number}),\n\t{Record Count} = count(1)) ~> Aggregate1\nRecordCount select(mapColumn(\n\t\tcol0,\n\t\t{Account Number} = col1,\n\t\tcol2,\n\t\tcol3,\n\t\tcol4,\n\t\tcol5,\n\t\tcol6,\n\t\tcol7,\n\t\tcol8,\n\t\tcol9,\n\t\tcol10,\n\t\tcol11,\n\t\tcol12,\n\t\tcol13,\n\t\tcol14,\n\t\tcol15,\n\t\tcol16,\n\t\tcol17,\n\t\tcol18,\n\t\tcol19,\n\t\tcol20,\n\t\tcol21,\n\t\tcol22,\n\t\tcol23,\n\t\tcol24,\n\t\tcol25,\n\t\tcol26,\n\t\tcol27,\n\t\tcol28\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> Select1\nAggregate1 sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tpartitionFileNames:[($TgtFolderPath+$TgtFileName)],\n\tpartitionBy('hash', 1),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> ValidationResult"
+		}
+	}
+}

@@ -1,0 +1,268 @@
+{
+	"name": "Test_HCSC_Medical_Claim_Full",
+	"properties": {
+		"description": "To run all the clients in the HCSC Carrier",
+		"activities": [
+			{
+				"name": "Get Metadata1",
+				"type": "GetMetadata",
+				"dependsOn": [
+					{
+						"activity": "Create Run",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "Dataset_DelimitedText_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"ContainerName": "po-warehouse-data",
+							"FolderPath": {
+								"value": "@pipeline().parameters.Carrier",
+								"type": "Expression"
+							},
+							"FileName": "@concat('','')",
+							"FirstRowHeader": false,
+							"ColumnDelimiter": " "
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true
+					},
+					"formatSettings": {
+						"type": "DelimitedTextReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Metadata1').output.childitems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Get Client Name",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "Client",
+								"value": {
+									"value": "@item().name",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Test_Pipeline_Load_Medical_Claims_Data",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Get Client Name",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "Test_Pipeline_Load_Medical_Claims_Data",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"DataSource": {
+										"value": "@pipeline().parameters.Carrier",
+										"type": "Expression"
+									},
+									"Client": {
+										"value": "@variables('Client')",
+										"type": "Expression"
+									},
+									"ActualDataSource": {
+										"value": "@pipeline().parameters.Carrier",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Create Run",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[audit].[create_run]",
+					"storedProcedureParameters": {
+						"File_type": {
+							"value": {
+								"value": "@pipeline().parameters.File_type",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LinkedService_AzureSqlDatabase_PO",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"DatabaseName": "db-po-warehouse-dev-eus"
+					}
+				}
+			},
+			{
+				"name": "Run Status Success",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_status",
+					"value": "SUCCESS"
+				}
+			},
+			{
+				"name": "Run Status failed",
+				"description": "",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach1",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "run_status",
+					"value": "FAILED"
+				}
+			},
+			{
+				"name": "end run",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Run Status Success",
+						"dependencyConditions": [
+							"Succeeded",
+							"Skipped"
+						]
+					},
+					{
+						"activity": "Run Status failed",
+						"dependencyConditions": [
+							"Succeeded",
+							"Skipped"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[audit].[END_Run]",
+					"storedProcedureParameters": {
+						"File_type": {
+							"value": {
+								"value": "@pipeline().parameters.File_type",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"run_status": {
+							"value": {
+								"value": "@variables('run_status')",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LinkedService_AzureSqlDatabase_PO",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"DatabaseName": "db-po-warehouse-dev-eus"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"Carrier": {
+				"type": "string",
+				"defaultValue": "Cigna"
+			},
+			"File_type": {
+				"type": "string",
+				"defaultValue": "Medical_Claim"
+			}
+		},
+		"variables": {
+			"Client": {
+				"type": "String"
+			},
+			"run_status": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-09-23T17:04:30Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

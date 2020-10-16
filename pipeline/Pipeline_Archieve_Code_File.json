@@ -1,0 +1,133 @@
+{
+	"name": "Pipeline_Archieve_Code_File",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.file_name_array",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy data1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [
+								{
+									"name": "file_name",
+									"value": "@item().name"
+								}
+							],
+							"typeProperties": {
+								"source": {
+									"type": "BinarySource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": false,
+										"deleteFilesAfterCompletion": true
+									},
+									"formatSettings": {
+										"type": "BinaryReadSettings"
+									}
+								},
+								"sink": {
+									"type": "BinarySink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									}
+								},
+								"enableStaging": false
+							},
+							"inputs": [
+								{
+									"referenceName": "Dataset_Binary_copy_code_files",
+									"type": "DatasetReference",
+									"parameters": {
+										"container_name": {
+											"value": "@pipeline().parameters.container_name",
+											"type": "Expression"
+										},
+										"file_path": {
+											"value": "@pipeline().parameters.source_file_path",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "Dataset_Binary_copy_code_files",
+									"type": "DatasetReference",
+									"parameters": {
+										"container_name": {
+											"value": "@pipeline().parameters.container_name",
+											"type": "Expression"
+										},
+										"file_path": {
+											"value": "@pipeline().parameters.target_file_path",
+											"type": "Expression"
+										},
+										"file_name": {
+											"value": "@item().name",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"file_name_array": {
+				"type": "array",
+				"defaultValue": [
+					{
+						"name": "NDC_2020.8.12.xlsx",
+						"type": "File"
+					}
+				]
+			},
+			"container_name": {
+				"type": "string",
+				"defaultValue": "po-warehouse-data"
+			},
+			"source_file_path": {
+				"type": "string",
+				"defaultValue": "Code_Files/NDC/Unprocessed"
+			},
+			"target_file_path": {
+				"type": "string",
+				"defaultValue": "Code_Files/NDC/Processed"
+			}
+		},
+		"variables": {
+			"file_name": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-09-25T05:11:50Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

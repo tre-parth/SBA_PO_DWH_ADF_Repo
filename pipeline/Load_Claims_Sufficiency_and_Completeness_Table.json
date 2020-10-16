@@ -1,0 +1,82 @@
+{
+	"name": "Load_Claims_Sufficiency_and_Completeness_Table",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy Claims Sufficiency and Completeness",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ExcelSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFolderPath": "PO_WH_Development_Docs/DQ1",
+							"wildcardFileName": {
+								"value": "@concat('DQ 1 Sufficiency Completeness and Consistency Checks','*.xlsx')",
+								"type": "Expression"
+							},
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"tableOption": "autoCreate"
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Dataset_Excel_ADLS_Gen2_Source",
+						"type": "DatasetReference",
+						"parameters": {
+							"FolderPath": "PO_WH_Development_Docs/DQ1",
+							"FileName": {
+								"value": "@concat('','')",
+								"type": "Expression"
+							},
+							"SheetName": "Claims Sufficient and Complete",
+							"DataRange": "A6:E84",
+							"ContainerName": "po-warehouse-data",
+							"HeaderFlag": true
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Dataset_AzureSql_Table_Sink",
+						"type": "DatasetReference",
+						"parameters": {
+							"SchemaName": "land",
+							"TableName": "claims_sufficiency_and_completeness",
+							"DatabaseName": "db-po-warehouse-dev-eus"
+						}
+					}
+				]
+			}
+		],
+		"folder": {
+			"name": "Tredence"
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-08-20T07:27:16Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
